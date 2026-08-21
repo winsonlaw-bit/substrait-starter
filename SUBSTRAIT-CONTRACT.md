@@ -1,7 +1,7 @@
 <!-- BEGIN substrait-app contract (v6) — managed by the substrait plugin (link/deploy); edits inside this block are overwritten on update. Delete the whole block to opt out. -->
 ## Substrait deployment
 
-**Linked app:** `substrait-starter` — https://substrait-starter.ninjavan.apps.substrait.build
+**Linked app:** `substrait-starter-2` — https://substrait-starter-2.ninjavan.apps.substrait.build
 
 This project deploys to the **Substrait platform** (linked via the gitignored
 `.substrait/config.json`). Deploy with **`/substrait:deploy`** (packages source-only,

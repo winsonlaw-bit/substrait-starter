@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "My First Substrait App",
-    "description": "A starter internal tool. Serves one web page and a small JSON API.",
-    "version": "0.1.0"
+    "title": "体积重量计算器",
+    "description": "输入包裹尺寸（长、宽、高，厘米），除以 5000 计算计费重量（公斤）。同时提供一个 JSON API。",
+    "version": "1.0.0"
   },
   "paths": {
     "/health": {
@@ -28,26 +28,56 @@
         }
       }
     },
-    "/api/info": {
+    "/api/volumetric-weight": {
       "get": {
-        "summary": "Info",
-        "description": "Returns the app name and current server time, so the page can prove the backend is running.",
-        "operationId": "info_api_info_get",
+        "tags": ["calculator"],
+        "summary": "Volumetric weight",
+        "description": "Calculate volumetric (billable) weight from package dimensions. Formula: (length × width × height) ÷ 5000.",
+        "operationId": "volumetric_weight_api_volumetric_weight_get",
+        "parameters": [
+          {
+            "name": "length",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "minimum": 0 },
+            "description": "Package length in centimeters"
+          },
+          {
+            "name": "width",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "minimum": 0 },
+            "description": "Package width in centimeters"
+          },
+          {
+            "name": "height",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "minimum": 0 },
+            "description": "Package height in centimeters"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Application information",
+            "description": "Volumetric weight calculation result",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "app": { "type": "string", "example": "My First Substrait App" },
-                    "server_time": { "type": "string", "example": "2026-08-20 06:15:48 UTC" }
+                    "length_cm": { "type": "number", "example": 30 },
+                    "width_cm": { "type": "number", "example": 20 },
+                    "height_cm": { "type": "number", "example": 15 },
+                    "divisor": { "type": "integer", "example": 5000 },
+                    "volumetric_weight_kg": { "type": "number", "example": 1.8 }
                   },
-                  "required": ["app", "server_time"]
+                  "required": ["length_cm", "width_cm", "height_cm", "divisor", "volumetric_weight_kg"]
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation error — a required parameter is missing or below zero"
           }
         }
       }

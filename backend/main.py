@@ -1,5 +1,6 @@
 """
-Substrait starter app — a single backend that serves both its web page and its API.
+Volumetric weight calculator — a single backend that serves both its web page
+and its API.
 
 Substrait requires three things of this file:
   1. the server listens on port 8000          (set in cicd/Dockerfile.backend)
@@ -8,16 +9,12 @@ Substrait requires three things of this file:
 
 Because this project has no frontend/ folder, Substrait sends ALL traffic to this
 backend — including "/" — so this file also serves the page you see in the browser.
-
-To change the app, describe what you want to your AI assistant. It will edit this file.
 """
 
-from datetime import datetime, timezone
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 
-APP_NAME = "My First Substrait App"
+APP_NAME = "体积重量计算器"
 
 app = FastAPI(title=APP_NAME, docs_url="/api/docs")
 
@@ -27,20 +24,30 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/api/info")
-def info():
+@app.get("/api/volumetric-weight", tags=["calculator"])
+def volumetric_weight(
+    length: float = Query(ge=0, description="Package length in centimeters"),
+    width: float = Query(ge=0, description="Package width in centimeters"),
+    height: float = Query(ge=0, description="Package height in centimeters"),
+):
+    """Calculate volumetric (billable) weight from package dimensions."""
+    divisor = 5000
+    weight = (length * width * height) / divisor
     return {
-        "app": APP_NAME,
-        "server_time": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "length_cm": length,
+        "width_cm": width,
+        "height_cm": height,
+        "divisor": divisor,
+        "volumetric_weight_kg": round(weight, 4),
     }
 
 
 PAGE = """<!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>__APP_NAME__</title>
+<title>体积重量计算器</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -56,125 +63,161 @@ PAGE = """<!doctype html>
   }
   .layout {
     width: 100%;
-    max-width: 640px;
+    max-width: 460px;
   }
   .hero {
     margin-bottom: 18px;
     text-align: left;
   }
-  .eyebrow {
-    display: inline-block;
-    margin-bottom: 10px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(23, 32, 51, 0.06);
-    color: #41506a;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
   .hero h1 {
     margin: 0;
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
-    line-height: 1.05;
-    letter-spacing: -0.04em;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
     color: #0f172a;
   }
   .hero p {
-    margin: 12px 0 0;
-    max-width: 520px;
+    margin: 10px 0 0;
     color: #526076;
-    font-size: 16px;
+    font-size: 15px;
   }
   .card {
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid rgba(148, 163, 184, 0.22);
     border-radius: 22px;
-    padding: 36px;
+    padding: 32px;
     width: 100%;
     box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
     backdrop-filter: blur(14px);
   }
-  .card h2 {
-    margin: 0 0 8px;
-    font-size: 24px;
-    letter-spacing: -0.02em;
-    color: #0f172a;
+  .field {
+    margin-bottom: 18px;
   }
-  .card p {
-    margin: 0 0 20px;
-    color: #5c6779;
-  }
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 999px;
+  .field label {
+    display: block;
+    margin-bottom: 6px;
     font-size: 14px;
     font-weight: 600;
-    background: #eef2f7;
-    color: #526076;
+    color: #41506a;
   }
-  .pill.ok { background: #e7f6ec; color: #10682f; }
-  .pill.fail { background: #fdecec; color: #9a1f1f; }
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.15s;
   }
-  .next {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(148, 163, 184, 0.22);
+  .input-wrap:focus-within {
+    border-color: #3b82f6;
+  }
+  .input-wrap input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 12px 16px;
+    font: 16px ui-sans-serif, system-ui, sans-serif;
+    color: #0f172a;
+    background: transparent;
+    -moz-appearance: textfield;
+  }
+  .input-wrap input::-webkit-outer-spin-button,
+  .input-wrap input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .input-wrap .unit {
+    padding-right: 16px;
+    color: #94a3b8;
     font-size: 14px;
-    color: #5c6779;
   }
-  code {
-    background: #eef2f7;
+  .result {
+    margin-top: 24px;
+    padding: 24px;
+    border-radius: 16px;
+    background: #f0f7ff;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    text-align: center;
+  }
+  .result .label {
+    font-size: 14px;
+    color: #526076;
+    margin-bottom: 4px;
+  }
+  .result .value {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+  }
+  .result .value .unit {
+    font-size: 1.2rem;
+    color: #526076;
+    font-weight: 500;
+  }
+  .result .formula {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .result .formula code {
+    background: rgba(59, 130, 246, 0.08);
     padding: 2px 6px;
     border-radius: 5px;
-    font-size: 13px;
+    font-size: 12px;
+    color: #41506a;
   }
 </style>
 </head>
 <body>
   <div class="layout">
     <section class="hero">
-      <span class="eyebrow">Welcome</span>
-      <h1>Hello World</h1>
-      <p>A clean, modern starting point for your Substrait application.</p>
+      <h1>体积重量计算器</h1>
+      <p>输入包裹尺寸，计算计费重量。</p>
     </section>
 
     <main class="card">
-      <h2>__APP_NAME__</h2>
-      <p>Your app is deployed and running on Substrait.</p>
+      <div class="field">
+        <label for="len">长度</label>
+        <div class="input-wrap">
+          <input id="len" type="number" min="0" step="0.1" placeholder="0" autocomplete="off">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="wid">宽度</label>
+        <div class="input-wrap">
+          <input id="wid" type="number" min="0" step="0.1" placeholder="0" autocomplete="off">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="hgt">高度</label>
+        <div class="input-wrap">
+          <input id="hgt" type="number" min="0" step="0.1" placeholder="0" autocomplete="off">
+          <span class="unit">cm</span>
+        </div>
+      </div>
 
-      <span class="pill" id="status"><span class="dot"></span> Checking the backend…</span>
-
-      <div class="next">
-        This page is served by <code>backend/main.py</code>.
-        Tell your AI assistant what you want to build and it will edit that file,
-        then deploy again to see your changes live.
+      <div class="result" id="result">
+        <div class="label">计费重量</div>
+        <div class="value" id="result-value">0.00 <span class="unit">kg</span></div>
+        <div class="formula"><code>(长 × 宽 × 高) ÷ 5000</code></div>
       </div>
     </main>
   </div>
 
 <script>
-  fetch("/api/info")
-    .then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(d => {
-      const el = document.getElementById("status");
-      el.className = "pill ok";
-      el.innerHTML = '<span class="dot"></span> Backend responding &middot; ' + d.server_time;
-    })
-    .catch(() => {
-      const el = document.getElementById("status");
-      el.className = "pill fail";
-      el.innerHTML = '<span class="dot"></span> Backend not responding';
-    });
+  const inputs = ['len', 'wid', 'hgt'].map(id => document.getElementById(id));
+  const resultValue = document.getElementById('result-value');
+
+  function calc() {
+    const [l, w, h] = inputs.map(i => parseFloat(i.value) || 0);
+    const weight = (l * w * h) / 5000;
+    resultValue.innerHTML = weight.toFixed(2) + ' <span class="unit">kg</span>';
+  }
+
+  inputs.forEach(i => i.addEventListener('input', calc));
 </script>
 </body>
 </html>
@@ -183,4 +226,4 @@ PAGE = """<!doctype html>
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def homepage():
-    return PAGE.replace("__APP_NAME__", APP_NAME)
+    return PAGE
